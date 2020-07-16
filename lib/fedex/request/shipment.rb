@@ -47,7 +47,7 @@ module Fedex
           add_origin(xml) if @origin
           add_recipient(xml)
           add_shipping_charges_payment(xml)
-          add_special_services(xml) if @shipping_options[:return_reason] || @shipping_options[:cod] || @shipping_options[:saturday_delivery]
+          add_special_services(xml) if @shipping_options[:return_reason] || @shipping_options[:cod] || @shipping_options[:saturday_delivery] || @shipping_options[:one_rate]
           add_customs_clearance(xml) if @customs_clearance_detail
           add_custom_components(xml)
           xml.RateRequestTypes "ACCOUNT"
@@ -122,6 +122,9 @@ module Fedex
           if @shipping_options[:saturday_delivery]
             xml.SpecialServiceTypes "SATURDAY_DELIVERY"
           end
+          if @shipping_options[:one_rate]
+            xml.SpecialServiceTypes 'FEDEX_ONE_RATE'
+          end          
         }
       end
 
