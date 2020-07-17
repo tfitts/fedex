@@ -8,19 +8,17 @@ module Fedex
         api_response = self.class.post(api_url, :body => build_xml)
         puts api_response if @debug
         response = parse_response(api_response)
-        binding.pry
         if success?(response)
           rate_reply_details = response[:rate_reply][:rate_reply_details][:rated_shipment_details] || []
           rate_reply_details = [rate_reply_details] if rate_reply_details.is_a?(Hash)
 
           rate_reply_details.map do |rate_reply|
-            rate_details = [rate_reply[:rated_shipment_details]].flatten.first[:shipment_rate_detail]
-            rate_details.merge!(service_type: rate_reply[:service_type])
+            rate_details = rate_reply[:shipment_rate_detail]
+            rate_details.merge!(service_type: rate_details[:special_rating_applied])
             rate_details.merge!(transit_time: rate_reply[:transit_time])
             Fedex::Rate.new(rate_details)
           end
         else
-          binding.pry
           error_message = if response[:rate_reply]
             [response[:rate_reply][:notifications]].flatten.first[:message]
           else
@@ -50,8 +48,9 @@ module Fedex
         }
       end
       
-      def add_options(xml) 
-        xml.VariableOptions 'FEDEX_ONE_RATE'
+      # Add transite time options
+      def add_transit_time(xml)
+        xml.ReturnTransitAndCommit true
       end
 
       # Build xml Fedex Web Service request
@@ -66,8 +65,6 @@ module Fedex
             add_requested_shipment(xml)
           }
         end
-        
-        binding.pry
         
         builder.doc.root.to_xml
       end
